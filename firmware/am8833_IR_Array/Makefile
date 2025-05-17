@@ -1,11 +1,13 @@
+
 all : flash
 
 TARGET:=nav_lcd
-CH32V003FUN=../ch32v003fun/ch32v003fun
-MINICHLINK=../ch32v003fun/minichlink
-#LINKER_SCRIPT=./ch32v003fun.ld
+TARGET_MCU:=CH32V003
+CH32FUN=../ch32fun/ch32fun
+MINICHLINK=../ch32fun/minichlink
+#LINKER_SCRIPT=./ch32fun.ld
 
-include $(CH32V003FUN)/ch32v003fun.mk
+include $(CH32FUN)/ch32fun.mk
 
 flash : cv_flash
 clean : cv_clean
