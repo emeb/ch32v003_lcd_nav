@@ -33,11 +33,11 @@ debounce_state dbs[NUM_BTNS];
 
 const uint8_t btn_pin[NUM_BTNS] = 
 {
-	6,		// PD6 = NW
-	1,		// PA1 = NE
+	6,		// PD6 = NW / UP
+	1,		// PA1 = NE / RIGHT
 	2,		// PA2 = CTR
-	0,		// PD0 = SE
-	0		// PC0 = SW
+	0,		// PD0 = SE / DN
+	0		// PC0 = SW / LEFT
 };
 
 GPIO_TypeDef *btn_port[NUM_BTNS] =
@@ -51,11 +51,20 @@ GPIO_TypeDef *btn_port[NUM_BTNS] =
 
 const char *btn_name[NUM_BTNS] =
 {
-	"NW",
-	"NE",
-	"CTR",
-	"SE",
-	"SW"
+	"UP",
+	"RIGHT",
+	"CENTER",
+	"DOWN",
+	"LEFT"
+};
+
+enum buttons
+{
+	BTN_UP,
+	BTN_RIGHT,
+	BTN_CTR,
+	BTN_DOWN,
+	BTN_LEFT,
 };
 
 /*

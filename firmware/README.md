@@ -10,6 +10,6 @@ git submodule update
 which will pull in the required repository. Then just drop down into the projects
 you're interested in and build them:
 ```
-cd am8833_IR_Array
+cd nl_irscope
 make
 ```

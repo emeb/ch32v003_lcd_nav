@@ -37,8 +37,8 @@
 #include "systick.h"
 #include "gfx.h"
 #include "lcd.h"
-#include "rand.h"
-#include "am8833.h"
+#include "amg8833.h"
+#include "menu.h"
 
 /* build version in simple format */
 const char *fwVersionStr = "V1.0";
@@ -48,21 +48,62 @@ const char *bdate = __DATE__;
 const char *btime = __TIME__;
 
 /*
- * convert Thermistor to deg C
+ * convert Thermistor to int/frac in C or F
  */
-void therm2c(uint16_t therm, uint8_t *c_int, uint16_t *c_frac)
+void therm2if(uint16_t therm, uint8_t *c_int, uint16_t *c_frac, uint8_t f)
 {
+	if(f)
+	{
+		/* convert to fahrenheit: 1843/1024 + (32*16) */
+		uint32_t temp = ((1843*(uint32_t)therm) >> 10) + (32<<4);
+		therm = temp;
+	}
 	*c_frac = (therm&0xf) * 625;
 	*c_int = (therm>>4);
 }
 
 /*
- * convert IR to deg C
+ * convert IR element to int/frac in C or F
  */
-void ir2c(uint16_t ir, uint8_t *c_int, uint8_t *c_frac)
+void ir2if(uint16_t ir, uint8_t *c_int, uint8_t *c_frac, uint8_t f)
 {
+	if(f)
+	{
+		/* convert to fahrenheit: 1843/1024 + (32*4) */
+		uint32_t temp = ((1843*(uint32_t)ir) >> 10) + (32<<2);
+		ir = temp;
+	}
 	*c_frac = (ir&3) * 25;
 	*c_int = (ir>>2);
+}
+
+/*
+ * convert byte to RGB color
+ */
+GFX_COLOR color_map(uint8_t scale, uint8_t map)
+{
+	GFX_COLOR result;
+	
+	switch(map)
+	{
+		case 0: /* Red */
+			result = scale << 16;
+			break;
+		
+		case 1: /* Green */
+			result = scale << 8;
+			break;
+		
+		case 2: /* Blue */
+			result = scale;
+			break;
+		
+		case 3: /* White */
+		default:
+			result = (scale << 16) | (scale << 8) | scale ;\
+			break;
+	}
+	return result;
 }
 
 /*
@@ -70,14 +111,12 @@ void ir2c(uint16_t ir, uint8_t *c_int, uint8_t *c_frac)
  */
 int main()
 {
-	char textbuf[16];
-	
 	// setup basic stuff - clocks, serial, etc
 	SystemInit();
 
 	// start serial @ default 115200bps
 	Delay_Ms( 100 );
-	printf("\r\r\n\nButton/LED Driver\n\r");
+	printf("\r\r\n\nNL IRScope\n\r");
 	printf("Version: %s\n\r", fwVersionStr);
 	printf("Build Date: %s\n\r", bdate);
 	printf("Build Time: %s\n\r", btime);
@@ -88,100 +127,78 @@ int main()
 	
 	/* init lcd */
 	gfx_init(&ST7735_drvr);
-	printf("initialized graphics & LCD\n\r");
-#if 0
-	gfx_set_forecolor(GFX_WHITE);
-	gfx_drawline(0, 0, 159, 79);
-	gfx_drawline(0, 79, 159, 0);
-	gfx_set_forecolor(GFX_MAGENTA);
-	gfx_drawstrctr(80, 40-4, "Hello World!");
-#endif
+	gfx_clrscreen();
 	lcd_bkl(1);
+	printf("initialized graphics & LCD\n\r");
 	
 	/* init am8833 IR sensor */
-	if(am8833_init())
+	gfx_set_forecolor(GFX_WHITE);
+	gfx_drawstrctr(80, 40-4, "Initializing Sensor");
+	Delay_Ms(100);
+	if(amg8833_init())
 	{
+		gfx_set_forecolor(GFX_RED);
+		gfx_drawstrctr(80, 40-4, "  IR Sensor failed  ");
 		printf("IR sensor init failed... halting.\n\r");
 		while(1) {}
 	}
 	else
+	{	gfx_clrscreen();
 		printf("initialized IR sensor\n\r");
+	}
 
+	/* start menu */
+	menu_init();
+	printf("initialized menu\n\r");
+
+	printf("Looping...\n\r");
 	while(1)
 	{
-#if 0
-		/* random text bubbles */
-		GFX_COLOR color = rand()&0xffffff;
-		gfx_set_forecolor(color);
-		int16_t x = rand() % 160;
-		int16_t y = rand() % 80;
-		gfx_fillcircle(x, y, 15);
-		gfx_set_forecolor(GFX_WHITE);
-		gfx_set_backcolor(color);
-		gfx_drawstrctr(x, y-4, "Hi");
-#else
-		/* 8x8 IR sensor */
 		// readout built-in thermistor
-		uint16_t temp, tcf;
-		uint8_t tci;
-		am8833_get_thermistor(&temp);
-		therm2c(temp, &tci, &tcf);
-		//printf("Thermistor: %d.%04d\n\r", tci, tcf);
-		sprintf(textbuf, "%d.%04d", tci, tcf);
+		uint16_t temp, tf;
+		uint8_t ti;
+		amg8833_get_thermistor(&temp);
+		therm2if(temp, &ti, &tf, menu_item_vals[0]);
+		//printf("Thermistor: %d.%04d\n\r", ti, tf);
+		sprintf(textbuf, "%d.%04d", ti, tf);
 		gfx_set_forecolor(GFX_WHITE);
-		gfx_drawstr(100, 0, textbuf);
+		gfx_drawstr(MNU_XSTART, 0, textbuf);
 		
 		// get array
 		uint16_t ir_array[64];
 		uint8_t ci, cf;
-		am8833_get_array(ir_array);
+		amg8833_get_array(ir_array);
 		
 		// readout center element
-		ir2c(ir_array[3*8+3], &ci, &cf);
+		ir2if(ir_array[3*8+3], &ci, &cf, menu_item_vals[0]);
 		sprintf(textbuf, "%3d.%02d", ci, cf);
-		gfx_drawstr(100, 10, textbuf);
+		gfx_drawstr(MNU_XSTART, MNU_YSPACE, textbuf);
 		
 		// render 8x8 array grid
 		GFX_RECT rect;
-		GFX_COLOR color;
-		uint8_t hsv[3];
-		hsv[0] = 0;
-		hsv[1] = 255;
 		for(int y = 0;y<8;y++)
 		{
+			/* render graphics */
 			for(int x = 0;x<8;x++)
 			{
-#if 1
-				int16_t scale = ((int16_t)ir_array[y*8+x]-110)<<3;
+				int16_t scale = ((int16_t)ir_array[y*8+x]-110 + menu_item_vals[2])<<menu_item_vals[3];
 				scale = scale < 0 ? 0 : scale;
 				scale = scale > 255 ? 255 : scale;
-				hsv[2] = scale;
-				color = gfx_hsv2rgb(hsv);
-#else
-				color = 
-#endif
 				rect.x0 = x*10;
-				rect.y0 = (7-y)*10;
+				rect.y0 = y*10;
 				rect.x1 = rect.x0+9;
 				rect.y1 = rect.y0+9;
-				gfx_colorrect(&rect, color);
+				gfx_colorrect(&rect, color_map(scale, menu_item_vals[1]));
 				
 				// draw a box around center rect
 				if((x==3)&&(y==3))
 					gfx_drawrect(&rect);
 
 			}
-		}		
-#endif
-		
-#if 0
-		/* test buttons */
-		for(int i=0;i<NUM_BTNS;i++)
-		{
-			if(SysTick_get_button(i))
-				printf("%s\n\r", btn_name[i]);
 		}
-#endif
+		
+		/* handle menu */
+		menu_proc();
 		
 		Delay_Ms(100);
 	}

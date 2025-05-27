@@ -41,6 +41,9 @@
 #define ST7735_TFTWIDTH 80
 #define ST7735_TFTHEIGHT 160
 
+#define ST7735_COLSTRT 26
+#define ST7735_ROWSTRT 1
+
 #define ST_CMD            0x100
 #define ST_CMD_DELAY      0x200
 #define ST_CMD_END        0x400
@@ -167,6 +170,7 @@ const static uint16_t
       0x00, 0x00, 0x02, 0x10,
     ST77XX_NORON | ST_CMD,          //  3: Normal display on, no args, w/delay
     ST_CMD_DELAY | 10,              //     10 ms delay
+    ST77XX_INVON | ST_CMD,          //  4: Inversion on , no args
     ST77XX_DISPON | ST_CMD,         //  4: Main screen turn on, no args w/delay
     ST_CMD_DELAY | 10,             //     100 ms delay
 	ST_CMD_END                      //  END OF LIST
@@ -373,32 +377,32 @@ void lcd_setRotation(uint8_t m)
 			lcd_write_byte(ST77XX_MADCTL_RGB | ST77XX_MADCTL_MX | ST77XX_MADCTL_MY );
 			_width  = ST7735_TFTWIDTH;
 			_height = ST7735_TFTHEIGHT;
-			rowstart = 0;
-			colstart = 24;
+			rowstart = ST7735_ROWSTRT;
+			colstart = ST7735_COLSTRT;
 			break;
 
 		case 1:
 			lcd_write_byte(ST77XX_MADCTL_RGB | ST77XX_MADCTL_MY | ST77XX_MADCTL_MV );
 			_width  = ST7735_TFTHEIGHT;
 			_height = ST7735_TFTWIDTH;
-			rowstart = 24;
-			colstart = 0;
+			rowstart = ST7735_COLSTRT;
+			colstart = ST7735_ROWSTRT;
 			break;
 
 		case 2:
 			lcd_write_byte(ST77XX_MADCTL_RGB | 0);
 			_width  = ST7735_TFTWIDTH;
 			_height = ST7735_TFTHEIGHT;
-			rowstart = 0;
-			colstart = 24;
+			rowstart = ST7735_ROWSTRT;
+			colstart = ST7735_COLSTRT;
 			break;
 
 		case 3:
 			lcd_write_byte(ST77XX_MADCTL_RGB | ST77XX_MADCTL_MX | ST77XX_MADCTL_MV );
 			_width  = ST7735_TFTHEIGHT;
 			_height = ST7735_TFTWIDTH;
-			rowstart = 24;
-			colstart = 0;
+			rowstart = ST7735_COLSTRT;
+			colstart = ST7735_ROWSTRT;
 			break;
 	}
 }
@@ -461,8 +465,8 @@ void lcd_init(void)
 	
 	/* init the controller */
 	// default settings
-	colstart = 24;
-	rowstart = 0;
+	colstart = ST7735_COLSTRT;
+	rowstart = ST7735_ROWSTRT;
 	_width  = ST7735_TFTWIDTH;
 	_height = ST7735_TFTHEIGHT;
 	rotation = 0;

@@ -1,7 +1,6 @@
-
 all : flash
 
-TARGET:=nav_lcd
+TARGET:=nl_irscope
 TARGET_MCU:=CH32V003
 CH32FUN=../ch32fun/ch32fun
 MINICHLINK=../ch32fun/minichlink
