@@ -1,4 +1,4 @@
-# Firmware
+# nl_irscope
 This directory contains source for a simple graphic driver for the AMG8833
 8x8 infrared detector. It uses the 5-way nav switch to select various display
 options, including
