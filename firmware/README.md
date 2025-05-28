@@ -19,4 +19,4 @@ In order to use the USB functionality you'll need to build code in the
 rv003usb repo. I have a fork + branch of this with demo code showing how to
 use the 5-way nav switch as a HID gamepad. Look for it here:
 
-(https://github.com/emeb/rv003usb/tree/bubble/nl_gamepad)[rv003usb repo]
+[rv003usb repo](https://github.com/emeb/rv003usb/tree/bubble/nl_gamepad)
